@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POLICE.ST — Night Patrol Radio</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    background: #07090d;
+    color: white;
+    font-family: 'Space Grotesk', sans-serif;
+    overflow: hidden;
+}
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 15% 20%, rgba(0,140,255,.15), transparent 30%),
+               radial-gradient(circle at 85% 30%, rgba(255,60,60,.15), transparent 30%),
+               linear-gradient(#050608, #090d14);
+    z-index: -3;
+}
+.city {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(transparent, #000),
+                repeating-linear-gradient(to right, #111 0px, #111 25px, transparent 25px, transparent 35px);
+    opacity: .45;
+}
+.rain {
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(-20deg, transparent 0px, transparent 10px, rgba(255,255,255,.05) 11px, transparent 12px);
+    animation: rain 0.35s linear infinite;
+    pointer-events: none;
+}
+@keyframes rain {
+    from { transform: translateY(-30px); }
+    to { transform: translateY(30px); }
+}
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 60px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+.signal {
+    color: #55b7ff;
+}
+.live {
+    color: #ff5353;
+}
+.hero {
+    height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    flex-direction: column;
+}
+.logo {
+    font-size: 82px;
+    font-weight: 700;
+    letter-spacing: 8px;
+}
+.subtitle {
+    margin-top: 12px;
+    font-size: 20px;
+    opacity: .8;
+}
+.tag {
+    margin-top: 25px;
+    font-family: "IBM Plex Mono", monospace;
+    color: #6ea9ff;
+    letter-spacing: 3px;
+    font-size: 14px;
+}
+.line {
+    width: 240px;
+    height: 1px;
+    background: #2b3f5f;
+    margin: 35px 0;
+}
+button {
+    background: rgba(40,90,255,.12);
+    border: 1px solid rgba(80,170,255,.35);
+    padding: 16px 34px;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: .25s;
+    backdrop-filter: blur(10px);
+}
+button:hover {
+    background: #2f80ed;
+    box-shadow: 0 0 30px rgba(47,128,237,.5);
+    transform: translateY(-2px);
+}
+.player {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 650px;
+    background: rgba(255,255,255,.05);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 18px;
+    padding: 22px;
+}
+.small {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: #7caeff;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+}
+.song {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.song h2 {
+    font-size: 22px;
+}
+.song span {
+    opacity: .6;
+}
+.wave {
+    margin-top: 20px;
+    height: 45px;
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+}
+.wave div {
+    width: 6px;
+    background: #4ecbff;
+    border-radius: 20px;
+    animation: wave 1.2s infinite ease-in-out;
+}
+.wave div:nth-child(2) { animation-delay: .1s; }
+.wave div:nth-child(3) { animation-delay: .2s; }
+.wave div:nth-child(4) { animation-delay: .3s; }
+.wave div:nth-child(5) { animation-delay: .4s; }
+.wave div:nth-child(6) { animation-delay: .5s; }
+.wave div:nth-child(7) { animation-delay: .6s; }
+.wave div:nth-child(8) { animation-delay: .7s; }
+.wave div:nth-child(9) { animation-delay: .8s; }
+.wave div:nth-child(10) { animation-delay: .9s; }
+@keyframes wave {
+    0%, 100% { height: 8px; }
+    50% { height: 42px; }
+}
+footer {
+    position: absolute;
+    bottom: 12px;
+    width: 100%;
+    text-align: center;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    opacity: .45;
+}
+.game-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    overflow: hidden;
+}
+#game-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.ip-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: red;
+    font-size: 8vw;
+    font-weight: bold;
+    text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9),
+                 -2px -2px 4px rgba(0, 0, 0, 0.9);
+    z-index: 10;
+    display: none;
+    pointer-events: none;
+    white-space: nowrap;
+    width: 90vw;
+    text-align: center;
+    letter-spacing: 2px;
+    animation: tiltAnimation 3s ease-in-out infinite;
+    transform-origin: center center;
+}
+@keyframes tiltAnimation {
+    0% { transform: translate(-50%, -50%) rotate(-20deg); }
+    50% { transform: translate(-50%, -50%) rotate(20deg); }
+    100% { transform: translate(-50%, -50%) rotate(-20deg); }
+}
+</style>
+</head>
+<body>
+<div class="rain"></div>
+<div class="city"></div>
+<nav>
+<div class="signal">SIGNAL ▰▰▰▰ STRONG</div>
+<div class="live">02:41 AM ● LIVE</div>
+</nav>
+<section class="hero">
+<h1 class="logo">POLICE.ST</h1>
+<p class="subtitle">Night Patrol Radio</p>
+<p class="tag">Broadcasting after dark.</p>
+<div class="line"></div>
+<button id="playButton">▶ TUNE IN</button>
+</section>
+<div class="player">
+<div class="small">NOW TRANSMITTING</div>
+<div class="song">
+<div><h2>Midnight Drive</h2><span>Nova FM</span></div>
+<div id="status">02:17 / 03:56</div>
+</div>
+<div class="wave">
+<div></div><div></div><div></div><div></div><div></div>
+<div></div><div></div><div></div><div></div><div></div>
+</div>
+</div>
+<footer>Broadcasting from somewhere in the city.</footer>
+
+<!-- Hidden elements for game mechanics -->
+<div id="game-container" class="game-container" style="display: none;">
+    <img id="game-image" src="" alt="Game Animation">
+    <audio id="game-audio" preload="auto">
+        <source src="assets/game-audio.mp3" type="audio/mpeg">
+    </audio>
+    <div id="ip-address" class="ip-display"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
