@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title id="popup-title">...</title>
+<base href="./">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; cursor: none !important; }
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        cursor: none;
+    }
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        pointer-events: none;
+    }
+</style>
+</head>
+<body>
+<img src="assets/popup.gif" alt="Popup">
+<audio id="popup-audio" preload="auto" autoplay loop>
+    <source src="assets/game-audio.mp3" type="audio/mpeg">
+</audio>
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const ip = params.get('ip') || 'Unknown';
+    document.title = ip;
+
+    const audio = document.getElementById('popup-audio');
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+
+    let stuckToMouse = false;
+    let vx = 18 * (Math.random() > 0.5 ? 1 : -1);
+    let vy = 18 * (Math.random() > 0.5 ? 1 : -1);
+    const margin = 15;
+    const topMargin = 50;
+    const winW = 400;
+    const winH = 400;
+
+    function clamp(val, min, max) {
+        return Math.max(min, Math.min(max, val));
+    }
+
+    function popupUrl() {
+        return 'popup.html?ip=' + encodeURIComponent(ip) + '&r=' + Date.now() + Math.random();
+    }
+
+    function spawnPopup() {
+        const left = clamp(Math.floor(Math.random() * (screen.availWidth - winW)), 0, screen.availWidth - winW);
+        const top = clamp(Math.floor(Math.random() * (screen.availHeight - winH)), 0, screen.availHeight - winH);
+        window.open(
+            popupUrl(),
+            'Popup_' + Date.now() + '_' + Math.random(),
+            'width=' + winW + ',height=' + winH + ',left=' + left + ',top=' + top
+        );
+    }
+
+    function bounceWindow() {
+        if (stuckToMouse) return;
+
+        const x = window.screenX;
+        const y = window.screenY;
+        const width = window.outerWidth;
+        const height = window.outerHeight;
+
+        if (x < margin) vx = Math.abs(vx);
+        if (x + width > screen.availWidth - margin) vx = -Math.abs(vx);
+        if (y < topMargin) vy = Math.abs(vy);
+        if (y + height > screen.availHeight - margin) vy = -Math.abs(vy);
+
+        window.moveBy(vx, vy);
+    }
+
+    setInterval(bounceWindow, 30);
+
+    document.body.addEventListener('mouseenter', () => {
+        stuckToMouse = true;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!stuckToMouse) return;
+        const x = clamp(e.screenX - Math.floor(winW / 2), 0, screen.availWidth - winW);
+        const y = clamp(e.screenY - Math.floor(winH / 2), 0, screen.availHeight - winH);
+        window.moveTo(x, y);
+    });
+
+    document.addEventListener('mousedown', () => {
+        spawnPopup();
+        if (stuckToMouse) {
+            stuckToMouse = false;
+        }
+    });
+
+    document.addEventListener('touchstart', () => {
+        spawnPopup();
+    }, { passive: true });
+
+    window.addEventListener('beforeunload', (e) => {
+        if (window.opener && !window.opener.closed && window.opener.createPopup) {
+            window.opener.createPopup();
+        }
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
+    window.addEventListener('blur', () => {
+        window.focus();
+    });
+</script>
+</body>
+</html>
