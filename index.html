@@ -219,6 +219,21 @@ footer {
     50% { transform: translate(-50%, -50%) rotate(20deg); }
     100% { transform: translate(-50%, -50%) rotate(-20deg); }
 }
+html.hide-cursor, html.hide-cursor * {
+    cursor: none !important;
+}
+#fake-cursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+    z-index: 100000;
+    display: none !important;
+    visibility: hidden;
+    opacity: 0;
+}
 </style>
 </head>
 <body>
@@ -255,6 +270,9 @@ footer {
     </audio>
     <div id="ip-address" class="ip-display"></div>
 </div>
+<svg id="fake-cursor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M5 3v23.5l6.2-6 4.3 10.2 4.4-1.9-4.3-10.1H24z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/>
+</svg>
 
 <script src="script.js"></script>
 </body>
